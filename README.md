@@ -13,7 +13,7 @@ on the Waveforms tab.
 
 In the data export dialog, just select the signal you want to graph. ***NOTE: Each signal must be exported in its own text file.***
 
-<img src="dataExport.png" width="333" height="477">
+<img src="dataExport.png" width="477" height="333">
 
 ## Controls ##
 
