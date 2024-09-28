@@ -73,6 +73,8 @@ function closestNum(array, num) {
     if (m < minDiff) {
       minDiff = m;
       ans = array[i];
+    } else if (m > minDiff) {
+      return ans;
     }
   }
   return ans;
