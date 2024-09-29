@@ -16,11 +16,13 @@ var startSlider_pos = [115, 100, 300, 120];
 var endLabel_pos = [10, 120, 80, 140];
 var endEdit_pos = [80, 120, 115, 140];
 var endSlider_pos = [115, 120, 300, 140];
+var colorLabel_pos = [10, 140, 80, 160];
+var colorButton_pos = [80, 140, 120, 160];
 
-var createButton_pos = [10, 145, 100, 170];
-var test1_pos = [10, 170, 100, 190];
-var test2_pos = [10, 190, 100, 210];
-var test3_pos = [10, 210, 100, 230];
+var createButton_pos = [10, 180, 100, 200];
+var test1_pos = [10, 200, 100, 220];
+var test2_pos = [10, 220, 100, 240];
+var test3_pos = [10, 240, 100, 260];
 
 var fileName;
 var loadButton;
@@ -41,6 +43,11 @@ var startSlider;
 var endLabel;
 var endEdit;
 var endSlider;
+
+var colorLabel;
+var colorButton;
+var colorHex = "0xF96163";
+var colorRGBA = [249 / 255, 97 / 255, 99 / 255, 1.0];
 
 //track how many traces are in the comp for naming
 var numTraces = 0;
@@ -63,22 +70,6 @@ function checkAllowed(inputFile) {
     return false;
   }
 }
-
-function closestNum(array, num) {
-  var i = 0;
-  var minDiff = 1000;
-  var ans;
-  for (i in array) {
-    var m = Math.abs(num - array[i]);
-    if (m < minDiff) {
-      minDiff = m;
-      ans = array[i];
-    } else if (m > minDiff) {
-      return ans;
-    }
-  }
-  return ans;
-}
 //returns the index of the value closest to 'num'
 function closestIndex(array, num) {
   var i = 0;
@@ -99,7 +90,7 @@ function closestIndex(array, num) {
 function sciNot(input) {
   var leftHandExp = /(\S+)(?=e)/g;
   var leftHandArr = input.match(leftHandExp);
-  if (leftHandArr == null) {
+  if (leftHandArr === null) {
     alert("Failed to parse left hand for input: " + input);
   }
   var leftHandStr = leftHandArr[0];
@@ -159,7 +150,6 @@ function loadTraceFile() {
     rawTimeNums.push(tVal);
     rawVoltageNums.push(vVal);
   }
-  //alert("Added " + rawVoltageNums.length + " voltage values");
 
   if (rawVoltageNums.length > 0) {
     fileIsLoaded = true;
@@ -169,7 +159,26 @@ function loadTraceFile() {
   }
 }
 
-function drawShapeLayer() {}
+// color picker helpers
+function drawColorButton() {
+  with (this) {
+    graphics.drawOSControl();
+    graphics.rectPath(0, 0, size[0], size[1]);
+    graphics.fillPath(fillBrush);
+  }
+}
+
+function updateButtonColor(button, rgbArray) {
+  button.fillBrush = button.graphics.newBrush(
+    button.graphics.BrushType.SOLID_COLOR,
+    rgbArray
+  );
+  button.onDraw = drawColorButton;
+  button.enabled = false;
+  button.enabled = true;
+}
+
+// -----
 
 function createPanel(thisObj) {
   var panel = thisObj;
@@ -259,6 +268,34 @@ function createPanel(thisObj) {
   loadButton.onClick = function () {
     loadTraceFile();
   };
+
+  colorLabel = panel.add("statictext", colorLabel_pos, "Trace Color:");
+  colorButton = panel.add("button", colorButton_pos, "");
+  colorButton.fillBrush = colorButton.graphics.newBrush(
+    colorButton.graphics.BrushType.SOLID_COLOR,
+    [0.9765, 0.3804, 0.3882]
+  );
+  colorButton.onDraw = drawColorButton;
+  colorButton.onClick = function () {
+    var colorPickerRes = $.colorPicker(colorHex);
+    if (colorPickerRes != -1) {
+      var r = colorPickerRes >> 16;
+      var g = (colorPickerRes & 0x00ff00) >> 8;
+      var b = colorPickerRes & 0xff;
+      colorRGBA[0] = r / 255;
+      colorRGBA[1] = g / 255;
+      colorRGBA[2] = b / 255;
+      $.writeln("selected a color");
+      colorHex = colorPickerRes;
+
+      updateButtonColor(colorButton, [r / 255, g / 255, b / 255]);
+    } else {
+      $.writeln("did not select a color");
+    }
+  };
+
+  //========================================
+
   createButton.onClick = function () {
     if (fileIsLoaded == true) {
       var valuesToUse = [];
@@ -309,6 +346,7 @@ function createPanel(thisObj) {
       var strokeGroup = shapeLayer
         .property("ADBE Root Vectors Group")
         .addProperty("ADBE Vector Graphic - Stroke");
+
       //making a shape based on the data
       var verts = [];
       var inTans = [];
@@ -321,9 +359,6 @@ function createPanel(thisObj) {
         verts.push([xPos, comp.height - yPos]);
         inTans.push([0, 0]);
         outTans.push([0, 0]);
-        if (i == 10) {
-          var numStr = yPos.toString();
-        }
       }
       var pathShape = new Shape();
       pathShape.inTangents = inTans;
@@ -336,6 +371,12 @@ function createPanel(thisObj) {
         .property(1)
         .property(2)
         .setValue(pathShape);
+
+      shapeLayer
+        .property("Contents")
+        .property(2)
+        .property("Color")
+        .setValue(colorRGBA);
     }
   };
   return panel;
