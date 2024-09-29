@@ -2,22 +2,25 @@
 var loadButton_pos = [10, 10, 100, 30];
 var fileName_pos = [110, 10, 200, 30];
 var heightLabel_pos = [10, 40, 80, 60];
-var heightSlider_pos = [115, 40, 300, 60];
-var heightEdit_pos = [80, 40, 115, 60];
+var heightSlider_pos = [125, 40, 300, 60];
+var heightEdit_pos = [80, 40, 125, 60];
 var widthLabel_pos = [10, 60, 80, 80];
-var widthSlider_pos = [115, 60, 300, 80];
-var widthEdit_pos = [80, 60, 115, 80];
+var widthSlider_pos = [125, 60, 300, 80];
+var widthEdit_pos = [80, 60, 125, 80];
 var resLabel_pos = [10, 80, 80, 100];
-var resEdit_pos = [80, 80, 115, 100];
-var resSlider_pos = [115, 80, 300, 100];
+var resEdit_pos = [80, 80, 125, 100];
+var resSlider_pos = [125, 80, 300, 100];
 var startLabel_pos = [10, 100, 80, 120];
-var startEdit_pos = [80, 100, 115, 120];
-var startSlider_pos = [115, 100, 300, 120];
+var startEdit_pos = [80, 100, 125, 120];
+var startSlider_pos = [125, 100, 300, 120];
 var endLabel_pos = [10, 120, 80, 140];
-var endEdit_pos = [80, 120, 115, 140];
-var endSlider_pos = [115, 120, 300, 140];
+var endEdit_pos = [80, 120, 125, 140];
+var endSlider_pos = [125, 120, 300, 140];
 var colorLabel_pos = [10, 140, 80, 160];
 var colorButton_pos = [80, 140, 120, 160];
+var strokeLabel_pos = [10, 160, 60, 180];
+var strokeSlider_pos = [125, 160, 300, 180];
+var strokeEdit_pos = [80, 160, 125, 180];
 
 var createButton_pos = [10, 180, 100, 200];
 var test1_pos = [10, 200, 100, 220];
@@ -46,8 +49,13 @@ var endSlider;
 
 var colorLabel;
 var colorButton;
+var strokeLabel;
+var strokeSlider;
+var strokeEdit;
+
 var colorHex = "0xF96163";
 var colorRGBA = [249 / 255, 97 / 255, 99 / 255, 1.0];
+var strokeWidth = 2.0;
 
 //track how many traces are in the comp for naming
 var numTraces = 0;
@@ -269,6 +277,7 @@ function createPanel(thisObj) {
     loadTraceFile();
   };
 
+  // Color picker--------
   colorLabel = panel.add("statictext", colorLabel_pos, "Trace Color:");
   colorButton = panel.add("button", colorButton_pos, "");
   colorButton.fillBrush = colorButton.graphics.newBrush(
@@ -294,6 +303,26 @@ function createPanel(thisObj) {
     }
   };
 
+  // stroke witdth control------
+  strokeLabel = panel.add("statictext", strokeLabel_pos, "Stroke: ");
+  strokeSlider = panel.add("slider", strokeSlider_pos, 2.0, 0.3, 10.0);
+  strokeEdit = panel.add(
+    "edittext",
+    strokeEdit_pos,
+    strokeSlider.value.toString()
+  );
+  strokeSlider.onChanging = function () {
+    strokeWidth = strokeSlider.value;
+    strokeEdit.text = strokeWidth.toString().substring(0, 5);
+  };
+  strokeEdit.onChange = function () {
+    var value = parseFloat(strokeEdit.text);
+    if (!isNaN(value)) {
+      value = Math.max(Math.min(value, 10.0), 0.3);
+      strokeSlider.value = value;
+      strokeWidth = value;
+    }
+  };
   //========================================
 
   createButton.onClick = function () {
@@ -377,6 +406,12 @@ function createPanel(thisObj) {
         .property(2)
         .property("Color")
         .setValue(colorRGBA);
+
+      shapeLayer
+        .property("Contents")
+        .property(2)
+        .property("Stroke Width")
+        .setValue(strokeWidth);
     }
   };
   return panel;
