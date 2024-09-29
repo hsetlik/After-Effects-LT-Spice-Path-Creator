@@ -166,9 +166,10 @@ function createPanel(thisObj) {
   loadButton.onClick = function () {
     sourceFile = sourceFile.openDlg("Choose a file", checkAllowed(sourceFile));
     fileName.text = sourceFile.name;
-    var openFile = sourceFile.open("r");
+    sourceFile.open("r");
     //store the whole file in a string
     var fileStr = sourceFile.read();
+    sourceFile.close();
     var leftExp = /(\S)+$/gm;
     var rightExp = /^\S+/gm;
     //get all the left-hand column voltages into an array

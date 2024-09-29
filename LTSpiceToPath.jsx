@@ -83,31 +83,90 @@ function closestNum(array, num) {
 function closestIndex(array, num) {
   var i = 0;
   var minDiff = 1000;
-  var ans;
   var bestIndex;
   for (i in array) {
     var m = Math.abs(num - array[i]);
     if (m < minDiff) {
       minDiff = m;
-      ans = array[i];
       bestIndex = i;
+    } else if (m > minDiff) {
+      return bestIndex;
     }
   }
   return bestIndex;
 }
 
 function sciNot(input) {
-  var leftHandExp = /(\d|\S)+(?=e)/;
+  var leftHandExp = /(\S+)(?=e)/g;
   var leftHandArr = input.match(leftHandExp);
+  if (leftHandArr == null) {
+    alert("Failed to parse left hand for input: " + input);
+  }
   var leftHandStr = leftHandArr[0];
   var leftHandNum = parseFloat(leftHandStr);
+  if (isNaN(leftHandNum)) {
+    alert("parseFloat failed for input: " + leftHandStr);
+  }
   var rightHandExp = /[^e]*$/g;
   var rightHandArr = input.match(rightHandExp);
+  if (rightHandArr === null) {
+    alert("Failed to parse right hand for input: " + input);
+  }
   var rightHandNum = parseInt(rightHandArr[0]);
+  if (isNaN(rightHandNum)) {
+    alert("parseInt failed for input: " + rightHandArr[0]);
+  }
   var exponent = Math.pow(10, rightHandNum);
-
   var output = leftHandNum * exponent;
   return output;
+}
+
+function loadTraceFile() {
+  sourceFile = sourceFile.openDlg("Choose a file", checkAllowed(sourceFile));
+  fileName.text = sourceFile.name;
+  if (!sourceFile.open("r")) {
+    alert("Failed to open trace file!");
+  }
+  //store the whole file in a string
+  var fileStr = sourceFile.read();
+
+  if (!sourceFile.close()) {
+    alert("Failed to close trace file!");
+  }
+  // split into left and right columns
+  const rightRegex = /(\S+)$/gm;
+  const leftRegex = /^(\S+)/gm;
+  var voltageStrings = fileStr.match(rightRegex);
+  var timeStrings = fileStr.match(leftRegex);
+  /*
+  alert(
+    "Loaded " +
+      voltageStrings.length +
+      " voltage strings and " +
+      timeStrings.length +
+      " time strings"
+  );
+  */
+  for (var idx = 1; idx < voltageStrings.length; idx++) {
+    var tVal = sciNot(timeStrings[idx].toString());
+    var vVal = sciNot(voltageStrings[idx].toString());
+    if (isNaN(tVal)) {
+      alert("Invalid time value for input: ");
+    }
+    if (isNaN(vVal)) {
+      alert("Invalid voltage value for input: ");
+    }
+    rawTimeNums.push(tVal);
+    rawVoltageNums.push(vVal);
+  }
+  //alert("Added " + rawVoltageNums.length + " voltage values");
+
+  if (rawVoltageNums.length > 0) {
+    fileIsLoaded = true;
+    createButton.enabled = true;
+  } else {
+    fileIsLoaded = false;
+  }
 }
 
 function createPanel(thisObj) {
@@ -165,65 +224,38 @@ function createPanel(thisObj) {
     }
   };
 
+  //add the start/end time controls
+  startLabel = panel.add("statictext", startLabel_pos, "Start: ");
+  startSlider = panel.add("slider", startSlider_pos, 0, 0, 100);
+  startEdit = panel.add(
+    "edittext",
+    startEdit_pos,
+    startSlider.value.toString()
+  );
+  startSlider.onChanging = function () {
+    startEdit.text = Math.floor(startSlider.value).toString();
+  };
+  startEdit.onChange = function () {
+    var inputNum = parseInt(startEdit.text, 10);
+    if (!isNaN(inputNum)) {
+      startSlider.value = inputNum;
+    }
+  };
+  endLabel = panel.add("statictext", endLabel_pos, "End: ");
+  endSlider = panel.add("slider", endSlider_pos, 100, 0, 100);
+  endEdit = panel.add("edittext", endEdit_pos, endSlider.value.toString());
+  endSlider.onChanging = function () {
+    endEdit.text = Math.floor(endSlider.value).toString();
+  };
+  endEdit.onChange = function () {
+    var inputNum = parseInt(endEdit.text, 10);
+    if (!isNaN(inputNum)) {
+      endSlider.value = inputNum;
+    }
+  };
+
   loadButton.onClick = function () {
-    sourceFile = sourceFile.openDlg("Choose a file", checkAllowed(sourceFile));
-    fileName.text = sourceFile.name;
-    var openFile = sourceFile.open("r");
-    //store the whole file in a string
-    var fileStr = sourceFile.read();
-    var leftExp = /(\S)+$/gm;
-    var rightExp = /^\S+/gm;
-    //get all the left-hand column voltages into an array
-    var rawVoltageStrings = fileStr.match(leftExp);
-    var rawTimeStrings = fileStr.match(rightExp);
-    var lineNumber = rawVoltageStrings.length;
-    //resSlider.maxvalue = (lineNumber / 2);
-    //start on line 1 so the names of the columns aren't included
-    for (var line = 1; line < lineNumber; line++) {
-      //more RegEx stuff to parse the scientific notation
-      //finding the voltage
-
-      var voltageVal = sciNot(rawVoltageStrings[line].toString());
-      rawVoltageNums.push(voltageVal);
-      var timeVal = sciNot(rawTimeStrings[line].toString());
-      rawTimeNums.push(timeVal);
-    }
-    if (rawVoltageNums.length > 0) {
-      fileIsLoaded = true;
-      createButton.enabled = true;
-
-      //add the start/end time controls
-      startLabel = panel.add("statictext", startLabel_pos, "Start: ");
-      startSlider = panel.add("slider", startSlider_pos, 0, 0, 100);
-      startEdit = panel.add(
-        "edittext",
-        startEdit_pos,
-        startSlider.value.toString()
-      );
-      startSlider.onChanging = function () {
-        startEdit.text = Math.floor(startSlider.value).toString();
-      };
-      startEdit.onChange = function () {
-        var inputNum = parseInt(startEdit.text, 10);
-        if (!isNaN(inputNum)) {
-          startSlider.value = inputNum;
-        }
-      };
-      endLabel = panel.add("statictext", endLabel_pos, "End: ");
-      endSlider = panel.add("slider", endSlider_pos, 100, 0, 100);
-      endEdit = panel.add("edittext", endEdit_pos, endSlider.value.toString());
-      endSlider.onChanging = function () {
-        endEdit.text = Math.floor(endSlider.value).toString();
-      };
-      endEdit.onChange = function () {
-        var inputNum = parseInt(endEdit.text, 10);
-        if (!isNaN(inputNum)) {
-          endSlider.value = inputNum;
-        }
-      };
-    } else {
-      fileIsLoaded = false;
-    }
+    loadTraceFile();
   };
   createButton.onClick = function () {
     if (fileIsLoaded == true) {
@@ -270,20 +302,11 @@ function createPanel(thisObj) {
       var shapeLayer = comp.layers.addShape();
       numTraces += 1;
       //determining the layer name
-      var namePrefix = "Trace ";
-      for (i = 0; i < comp.numLayers; ++i) {
-        var name = comp.layer(i + 1).name;
-        var getChars = /Trace/g;
-        if (getChars.test(name)) {
-          var arr = name.match(/\d/g);
-          if (parseInt(arr[0]) >= traceCount) {
-            numTraces = parseInt(arr[0]);
-          }
-        }
-      }
-      var traceCount = numTraces.toString();
-      var layerName = namePrefix.concat(traceCount);
-      shapeLayer.name = layerName;
+      shapeLayer.name = sourceFile.name.substring(
+        0,
+        sourceFile.name.indexOf(".")
+      );
+
       //creating all the properties
       var pathGroup = shapeLayer
         .property("ADBE Root Vectors Group")
