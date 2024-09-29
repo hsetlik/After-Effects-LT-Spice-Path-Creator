@@ -169,6 +169,8 @@ function loadTraceFile() {
   }
 }
 
+function drawShapeLayer() {}
+
 function createPanel(thisObj) {
   var panel = thisObj;
   loadButton = panel.add("button", loadButton_pos, "Choose a File");
@@ -271,32 +273,25 @@ function createPanel(thisObj) {
       var endSecs = (end / 100) * dataDuration;
       var windowDuration = endSecs - startSecs;
       var timeIncrement = windowDuration / numDataPoints;
-      var test3 = panel.add("statictext", test3_pos, timeIncrement.toString());
       for (i = 0; i < numDataPoints; i++) {
         var timePos = startSecs + timeIncrement * i;
-        if (i == 0) {
-          var test1 = panel.add("statictext", test1_pos, timePos.toString());
-          var array = [3, 7, 4.1, 5.8, 6];
-          var currentIndex = closestIndex(array, 4);
-          //should display '2'
-          var test2 = panel.add(
-            "statictext",
-            test2_pos,
-            currentIndex.toString()
-          );
-        }
         indecesToUse.push(closestIndex(rawTimeNums, timePos));
       }
 
       //picking out values based on resolution and finding the largest one for the vertical scale
       var maxVoltage = 0.0;
+      var minVoltage = 0.0;
       for (var i = 0; i < numDataPoints; i++) {
         var thisVoltage = rawVoltageNums[indecesToUse[i]];
         valuesToUse.push(thisVoltage);
-        if (Math.abs(thisVoltage) > maxVoltage) {
-          maxVoltage = Math.abs(thisVoltage);
+        if (thisVoltage > maxVoltage) {
+          maxVoltage = thisVoltage;
+        }
+        if (thisVoltage < minVoltage) {
+          minVoltage = thisVoltage;
         }
       }
+      var pxPerVolt = heightSlider.value / (maxVoltage - minVoltage);
       comp.openInViewer();
       //make a new shape layer
       var shapeLayer = comp.layers.addShape();
@@ -319,13 +314,11 @@ function createPanel(thisObj) {
       var inTans = [];
       var outTans = [];
       var xIncrement = widthSlider.value / numDataPoints;
-      var halfY = comp.height / 2;
       var halfX = comp.width / 2;
-      var gain = heightSlider.value / maxVoltage / 2;
       for (var i = 0; i < numDataPoints; i++) {
         var xPos = xIncrement * i - halfX;
-        var yPos = gain * valuesToUse[i];
-        verts.push([xPos, yPos]);
+        var yPos = pxPerVolt * (valuesToUse[i] - minVoltage);
+        verts.push([xPos, comp.height - yPos]);
         inTans.push([0, 0]);
         outTans.push([0, 0]);
         if (i == 10) {
